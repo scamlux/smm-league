@@ -1,0 +1,284 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  BRAND
+  INFLUENCER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum CampaignStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DealStatus {
+  ACTIVE
+  CONTENT_SUBMITTED
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  YOUTUBE
+  TIKTOK
+  TELEGRAM
+  TWITTER
+}
+
+// ==================== USERS ====================
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  name            String
+  role            UserRole
+  avatar          String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  brandProfile    BrandProfile?
+  influencerProfile InfluencerProfile?
+  bids            Bid[]
+  brandDeals      Deal[]    @relation("BrandDeals")
+  messages        Message[]
+  subscriptions   Subscription[]
+  payments        Payment[]
+  adminActions    AdminAction[]
+
+  @@index([role])
+  @@index([email])
+}
+
+// ==================== BRAND ====================
+
+model BrandProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  companyName     String
+  website         String?
+  description     String?
+  logo            String?
+  budget          Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns       Campaign[]
+
+  @@index([userId])
+}
+
+// ==================== INFLUENCER ====================
+
+model InfluencerProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  category        String
+  bio             String?
+  website         String?
+  rating          Float     @default(0)
+  rank            Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialAccounts  SocialAccount[]
+  bids            Bid[]
+  deals           Deal[]
+
+  @@index([userId])
+  @@index([rank])
+  @@index([rating])
+}
+
+// ==================== SOCIAL ACCOUNTS ====================
+
+model SocialAccount {
+  id              String    @id @default(cuid())
+  influencerId    String
+  platform        SocialPlatform
+  username        String
+  followers       Int       @default(0)
+  engagement      Float     @default(0)
+  url             String
+  syncedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  influencer      InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  @@index([influencerId])
+  @@index([platform])
+  @@unique([influencerId, platform, username])
+}
+
+// ==================== CAMPAIGNS ====================
+
+model Campaign {
+  id              String    @id @default(cuid())
+  brandId         String
+  title           String
+  description     String
+  budget          Float
+  platform        String    // "instagram", "youtube", "tiktok", etc.
+  deadline        DateTime
+  status          CampaignStatus @default(OPEN)
+  requirements    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  brand           BrandProfile @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  bids            Bid[]
+  deals           Deal[]
+
+  @@index([brandId])
+  @@index([status])
+}
+
+// ==================== BIDS ====================
+
+model Bid {
+  id              String    @id @default(cuid())
+  campaignId      String
+  userId          String
+  influencerId    String
+  price           Float
+  proposal        String
+  deliveryTime    DateTime
+  status          BidStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  influencer      InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([userId])
+  @@index([influencerId])
+  @@index([status])
+  @@unique([campaignId, influencerId])
+}
+
+// ==================== DEALS ====================
+
+model Deal {
+  id              String    @id @default(cuid())
+  campaignId      String
+  brandId         String
+  influencerId    String
+  price           Float
+  status          DealStatus @default(ACTIVE)
+  contentUrl      String?
+  approvedAt      DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  brand           User      @relation("BrandDeals", fields: [brandId], references: [id], onDelete: Cascade)
+  influencer      InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  messages        Message[]
+
+  @@index([campaignId])
+  @@index([brandId])
+  @@index([influencerId])
+  @@index([status])
+}
+
+// ==================== MESSAGES ====================
+
+model Message {
+  id              String    @id @default(cuid())
+  dealId          String
+  senderId        String
+  content         String
+  createdAt       DateTime  @default(now())
+
+  deal            Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  sender          User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([senderId])
+}
+
+// ==================== SUBSCRIPTIONS ====================
+
+model Subscription {
+  id              String    @id @default(cuid())
+  userId          String
+  status          SubscriptionStatus @default(ACTIVE)
+  tier            String    // "basic", "pro", "enterprise"
+  startDate       DateTime  @default(now())
+  endDate         DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ==================== PAYMENTS ====================
+
+model Payment {
+  id              String    @id @default(cuid())
+  userId          String
+  amount          Float
+  currency        String    @default("USD")
+  status          String    @default("completed") // "pending", "completed", "failed"
+  type            String    // "subscription", "campaign_fee"
+  referenceId     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ==================== AUDIT LOGS ====================
+
+model AdminAction {
+  id              String    @id @default(cuid())
+  adminId         String
+  action          String
+  targetId        String?
+  targetType      String?
+  details         String?
+  createdAt       DateTime  @default(now())
+
+  admin           User      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+}

@@ -1,0 +1,32 @@
+{
+  "name": "smm-league",
+  "version": "1.0.0",
+  "description": "Production-ready influencer marketing platform",
+  "private": true,
+  "workspaces": [
+    "apps/backend",
+    "apps/frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@smm-league/backend & npm run dev --workspace=@smm-league/frontend & wait",
+    "build": "npm run build --workspace=@smm-league/backend && npm run build --workspace=@smm-league/frontend",
+    "test": "echo \"Tests are not configured in this slimmed project\"",
+    "lint": "echo \"Lint is not configured in this slimmed project\"",
+    "postinstall": "npm run prisma:generate --workspace=@smm-league/backend"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.1",
+    "@turbo/gen": "^1.10.12",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
+    "turbo": "^1.10.12"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
