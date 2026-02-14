@@ -1,4 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 
 @Injectable()
@@ -21,16 +26,31 @@ export class InfluencersService {
   }
 
   async getInfluencerById(id: string) {
-    return this.prisma.influencerProfile.findUnique({
+    const influencer = await this.prisma.influencerProfile.findUnique({
       where: { id },
       include: {
         user: true,
         socialAccounts: true,
       },
     });
+    if (!influencer) {
+      throw new NotFoundException("Influencer not found");
+    }
+    return influencer;
   }
 
-  async updateInfluencer(id: string, data: any) {
+  async updateInfluencer(id: string, data: any, userId: string, role: string) {
+    const influencer = await this.prisma.influencerProfile.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!influencer) {
+      throw new NotFoundException("Influencer not found");
+    }
+    if (role !== "ADMIN" && influencer.userId !== userId) {
+      throw new ForbiddenException("You can update only your own profile");
+    }
+
     return this.prisma.influencerProfile.update({
       where: { id },
       data,
@@ -88,16 +108,34 @@ export class InfluencersService {
 
   async addSocialAccount(
     influencerId: string,
+    userId: string,
+    role: string,
     platform: string,
     username: string,
     followers: number,
     engagement: number,
     url: string,
   ) {
+    const influencer = await this.prisma.influencerProfile.findUnique({
+      where: { id: influencerId },
+    });
+    if (!influencer) {
+      throw new NotFoundException("Influencer not found");
+    }
+    if (role !== "ADMIN" && influencer.userId !== userId) {
+      throw new ForbiddenException("You can add social accounts only to your profile");
+    }
+
+    const normalizedPlatform = platform.toUpperCase();
+    const allowedPlatforms = ["INSTAGRAM", "YOUTUBE", "TIKTOK", "TELEGRAM", "TWITTER"];
+    if (!allowedPlatforms.includes(normalizedPlatform)) {
+      throw new BadRequestException("Invalid platform");
+    }
+
     return this.prisma.socialAccount.create({
       data: {
         influencerId,
-        platform: platform as any,
+        platform: normalizedPlatform as any,
         username,
         followers,
         engagement,

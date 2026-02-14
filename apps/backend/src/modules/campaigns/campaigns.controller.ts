@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -12,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { CampaignsService } from "./campaigns.service";
 import { JwtAuthGuard } from "../../common/jwt-auth.guard";
+import { Roles, RolesGuard } from "../../common/roles.guard";
 
 @Controller("campaigns")
 export class CampaignsController {
@@ -30,7 +32,8 @@ export class CampaignsController {
     return this.campaignsService.getCampaignById(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("BRAND", "ADMIN")
   @Post()
   async createCampaign(
     @Request() req: any,
@@ -44,8 +47,13 @@ export class CampaignsController {
       requirements?: string;
     },
   ) {
+    if (!body.deadline) {
+      throw new BadRequestException("deadline is required");
+    }
+
     return this.campaignsService.createCampaign(
       req.user.id,
+      req.user.role,
       body.title,
       body.description,
       body.budget,
@@ -57,17 +65,22 @@ export class CampaignsController {
 
   @UseGuards(JwtAuthGuard)
   @Put(":id")
-  async updateCampaign(@Param("id") id: string, @Body() data: any) {
-    return this.campaignsService.updateCampaign(id, data);
+  async updateCampaign(
+    @Param("id") id: string,
+    @Request() req: any,
+    @Body() data: any,
+  ) {
+    return this.campaignsService.updateCampaign(id, data, req.user.id, req.user.role);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(":id")
-  async deleteCampaign(@Param("id") id: string) {
-    return this.campaignsService.deleteCampaign(id);
+  async deleteCampaign(@Param("id") id: string, @Request() req: any) {
+    return this.campaignsService.deleteCampaign(id, req.user.id, req.user.role);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("INFLUENCER", "ADMIN")
   @Post(":id/bids")
   async submitBid(
     @Param("id") campaignId: string,
@@ -88,20 +101,31 @@ export class CampaignsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(":id/bids")
-  async getBids(@Param("id") campaignId: string) {
-    return this.campaignsService.getBids(campaignId);
+  async getBids(
+    @Param("id") campaignId: string,
+    @Request() req: any,
+  ) {
+    return this.campaignsService.getBids(
+      campaignId,
+      undefined,
+      req?.user?.id,
+      req?.user?.role,
+    );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("BRAND", "ADMIN")
   @Post("bids/:bidId/accept")
-  async acceptBid(@Param("bidId") bidId: string) {
-    return this.campaignsService.acceptBid(bidId);
+  async acceptBid(@Param("bidId") bidId: string, @Request() req: any) {
+    return this.campaignsService.acceptBid(bidId, req.user.id, req.user.role);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("BRAND", "ADMIN")
   @Post("bids/:bidId/reject")
-  async rejectBid(@Param("bidId") bidId: string) {
-    return this.campaignsService.rejectBid(bidId);
+  async rejectBid(@Param("bidId") bidId: string, @Request() req: any) {
+    return this.campaignsService.rejectBid(bidId, req.user.id, req.user.role);
   }
 }

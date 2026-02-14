@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Put,
@@ -11,7 +12,7 @@ import {
 } from "@nestjs/common";
 import { InfluencersService } from "./influencers.service";
 import { JwtAuthGuard } from "../../common/jwt-auth.guard";
-import { AdminGuard } from "../../common/roles.guard";
+import { AdminGuard, Roles, RolesGuard } from "../../common/roles.guard";
 
 @Controller("influencers")
 export class InfluencersController {
@@ -42,8 +43,12 @@ export class InfluencersController {
 
   @UseGuards(JwtAuthGuard)
   @Put(":id")
-  async updateInfluencer(@Param("id") id: string, @Body() data: any) {
-    return this.influencersService.updateInfluencer(id, data);
+  async updateInfluencer(
+    @Param("id") id: string,
+    @Request() req: any,
+    @Body() data: any,
+  ) {
+    return this.influencersService.updateInfluencer(id, data, req.user.id, req.user.role);
   }
 
   @UseGuards(JwtAuthGuard, AdminGuard)
@@ -52,10 +57,12 @@ export class InfluencersController {
     return this.influencersService.updateRankings(rankings);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("INFLUENCER", "ADMIN")
   @Post(":id/social-accounts")
   async addSocialAccount(
     @Param("id") id: string,
+    @Request() req: any,
     @Body()
     body: {
       platform: string;
@@ -65,8 +72,13 @@ export class InfluencersController {
       url: string;
     },
   ) {
+    if (!body.platform) {
+      throw new BadRequestException("platform is required");
+    }
     return this.influencersService.addSocialAccount(
       id,
+      req.user.id,
+      req.user.role,
       body.platform,
       body.username,
       body.followers,

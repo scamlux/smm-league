@@ -10,7 +10,6 @@ import {
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "../../common/jwt-auth.guard";
 import { RegisterDto, LoginDto } from "../../common/dto";
-import { Roles } from "../../common/roles.guard";
 
 @Controller("auth")
 export class AuthController {

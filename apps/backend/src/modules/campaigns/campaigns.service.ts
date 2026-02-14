@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 
 @Injectable()
@@ -6,7 +10,8 @@ export class CampaignsService {
   constructor(private prisma: PrismaService) {}
 
   async createCampaign(
-    brandId: string,
+    userId: string,
+    role: string,
     title: string,
     description: string,
     budget: number,
@@ -14,6 +19,21 @@ export class CampaignsService {
     deadline: Date,
     requirements?: string,
   ) {
+    if (role !== "ADMIN" && role !== "BRAND") {
+      throw new ForbiddenException("Only brands can create campaigns");
+    }
+
+    let brandId = userId;
+    if (role === "BRAND") {
+      const brandProfile = await this.prisma.brandProfile.findUnique({
+        where: { userId },
+      });
+      if (!brandProfile) {
+        throw new NotFoundException("Brand profile not found");
+      }
+      brandId = brandProfile.id;
+    }
+
     return this.prisma.campaign.create({
       data: {
         brandId,
@@ -58,7 +78,19 @@ export class CampaignsService {
     });
   }
 
-  async updateCampaign(id: string, data: any) {
+  async updateCampaign(id: string, data: any, userId: string, role: string) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id },
+      include: { brand: true },
+    });
+    if (!campaign) {
+      throw new NotFoundException("Campaign not found");
+    }
+
+    if (role !== "ADMIN" && campaign.brand.userId !== userId) {
+      throw new ForbiddenException("You can only update your own campaigns");
+    }
+
     return this.prisma.campaign.update({
       where: { id },
       data,
@@ -66,7 +98,18 @@ export class CampaignsService {
     });
   }
 
-  async deleteCampaign(id: string) {
+  async deleteCampaign(id: string, userId: string, role: string) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id },
+      include: { brand: true },
+    });
+    if (!campaign) {
+      throw new NotFoundException("Campaign not found");
+    }
+    if (role !== "ADMIN" && campaign.brand.userId !== userId) {
+      throw new ForbiddenException("You can only delete your own campaigns");
+    }
+
     return this.prisma.campaign.delete({
       where: { id },
     });
@@ -103,10 +146,28 @@ export class CampaignsService {
     });
   }
 
-  async getBids(campaignId?: string, userId?: string) {
+  async getBids(
+    campaignId?: string,
+    userId?: string,
+    requesterId?: string,
+    requesterRole?: string,
+  ) {
     const where: any = {};
     if (campaignId) where.campaignId = campaignId;
     if (userId) where.userId = userId;
+
+    if (campaignId && requesterId && requesterRole !== "ADMIN") {
+      const campaign = await this.prisma.campaign.findUnique({
+        where: { id: campaignId },
+        include: { brand: true },
+      });
+      if (!campaign) {
+        throw new NotFoundException("Campaign not found");
+      }
+      if (campaign.brand.userId !== requesterId) {
+        throw new ForbiddenException("Only campaign owner can view bids");
+      }
+    }
 
     return this.prisma.bid.findMany({
       where,
@@ -118,7 +179,7 @@ export class CampaignsService {
     });
   }
 
-  async acceptBid(bidId: string) {
+  async acceptBid(bidId: string, userId: string, role: string) {
     const bid = await this.prisma.bid.findUnique({
       where: { id: bidId },
     });
@@ -126,17 +187,27 @@ export class CampaignsService {
       throw new NotFoundException("Bid not found");
     }
 
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: bid.campaignId },
+      include: { brand: true },
+    });
+    if (!campaign) {
+      throw new NotFoundException("Campaign not found");
+    }
+
+    if (role !== "ADMIN" && campaign.brand.userId !== userId) {
+      throw new ForbiddenException("You can only accept bids on your campaigns");
+    }
+
     await this.prisma.bid.update({
       where: { id: bidId },
       data: { status: "ACCEPTED" },
     });
 
-    const campaign = await this.prisma.campaign.findUnique({
-      where: { id: bid.campaignId },
+    await this.prisma.bid.updateMany({
+      where: { campaignId: bid.campaignId, NOT: { id: bidId }, status: "PENDING" },
+      data: { status: "REJECTED" },
     });
-    if (!campaign) {
-      throw new NotFoundException("Campaign not found");
-    }
 
     const deal = await this.prisma.deal.create({
       data: {
@@ -150,7 +221,18 @@ export class CampaignsService {
     return deal;
   }
 
-  async rejectBid(bidId: string) {
+  async rejectBid(bidId: string, userId: string, role: string) {
+    const bid = await this.prisma.bid.findUnique({
+      where: { id: bidId },
+      include: { campaign: { include: { brand: true } } },
+    });
+    if (!bid) {
+      throw new NotFoundException("Bid not found");
+    }
+    if (role !== "ADMIN" && bid.campaign.brand.userId !== userId) {
+      throw new ForbiddenException("You can only reject bids on your campaigns");
+    }
+
     return this.prisma.bid.update({
       where: { id: bidId },
       data: { status: "REJECTED" },

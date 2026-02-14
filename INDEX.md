@@ -53,7 +53,7 @@ A **production-ready influencer marketing platform** that enables:
 
 ### Key Statistics
 
-```
+```md
 📊 Metrics
 ├─ Modules Built: 6 (Auth, Influencers, Campaigns, Deals, Chat, Admin)
 ├─ Frontend Pages: 15+ (Dashboard, League, Campaigns, Deals, etc.)
@@ -69,7 +69,7 @@ A **production-ready influencer marketing platform** that enables:
 
 ## 🏗️ Technology Stack
 
-```
+```md
 Frontend              Backend              Database            DevOps
 ├─ Next.js 14        ├─ NestJS 10        ├─ PostgreSQL 15    ├─ Docker
 ├─ React 18          ├─ Prisma 5         ├─ 14 Tables        ├─ Docker Compose
@@ -171,7 +171,7 @@ docker-compose exec backend npx prisma migrate dev
 
 ## 👥 Test Accounts
 
-```
+```md
 ADMIN
 ├─ Email: admin@example.com
 ├─ Password: Admin123!
@@ -215,7 +215,7 @@ INFLUENCER 3
 
 ## 🗂️ Project Structure
 
-```
+```md
 smm-league/
 │
 ├── 📄 Documentation
@@ -293,7 +293,7 @@ smm-league/
 
 ### Brand Workflow
 
-```
+```md
 1. Sign Up as Brand
    ↓
 2. Browse Influencer League
@@ -315,7 +315,7 @@ smm-league/
 
 ### Influencer Workflow
 
-```
+```md
 1. Sign Up as Influencer
    ↓
 2. Complete profile with social accounts
@@ -337,7 +337,7 @@ smm-league/
 
 ### Admin Workflow
 
-```
+```md
 1. Login as Admin
    ↓
 2. View comprehensive dashboard
@@ -363,7 +363,7 @@ smm-league/
 
 ### Authentication
 
-```
+```md
 POST   /auth/register              - Register new user
 POST   /auth/login                 - Login and get JWT
 POST   /auth/me                    - Get current user
@@ -371,7 +371,7 @@ POST   /auth/me                    - Get current user
 
 ### Influencers
 
-```
+```md
 GET    /influencers/league         - Get league ranking
 GET    /influencers/search         - Search by category/platform
 GET    /influencers/:id            - Get influencer profile
@@ -381,7 +381,7 @@ PUT    /admin/influencers/rankings/update  - Reorder (admin)
 
 ### Campaigns
 
-```
+```md
 GET    /campaigns                  - List campaigns
 POST   /campaigns                  - Create campaign (brand)
 GET    /campaigns/:id              - Get details
@@ -395,7 +395,7 @@ POST   /campaigns/bids/:bidId/reject  - Reject (brand)
 
 ### Deals
 
-```
+```md
 GET    /deals                      - Get user's deals
 GET    /deals/:id                  - Get deal details
 PUT    /deals/:id/status           - Update status
@@ -406,14 +406,14 @@ POST   /deals/:id/complete         - Complete deal
 
 ### Chat
 
-```
+```md
 GET    /chat/:dealId/messages      - Get messages
 POST   /chat/:dealId/messages      - Send message
 ```
 
 ### Admin (All require ADMIN role)
 
-```
+```md
 GET    /admin/dashboard            - Overview + stats
 GET    /admin/users                - All users
 POST   /admin/users                - Create user
@@ -453,7 +453,7 @@ POST   /admin/impersonate/:userId  - Login as user
 
 14 tables with proper relationships:
 
-```
+```md
 User ─┬─→ BrandProfile
       ├─→ InfluencerProfile ─→ SocialAccount
       ├─→ Campaign ─┬─→ Bid
@@ -541,7 +541,7 @@ Use the test accounts provided above and the API endpoint documentation.
 
 ### Common Issues
 
-**Database Connection Failed**
+**Database Connection Failed**_
 
 ```bash
 # Check PostgreSQL is running
@@ -551,7 +551,7 @@ docker-compose ps postgres
 psql $DATABASE_URL -c "SELECT 1"
 ```
 
-**Port Already in Use**
+**Port Already in Use**_
 
 ```bash
 # Find process on port
@@ -561,9 +561,9 @@ lsof -i :3000
 kill -9 <PID>
 ```
 
-**API Returns 401**
+**API Returns 401**_
 
-```
+```md
 Check:
 1. Token is included in Authorization header
 2. Token hasn't expired (7-day expiration)
@@ -635,7 +635,7 @@ See [QUICKSTART.md](./QUICKSTART.md) troubleshooting section.
 
 ## 🏆 Project Status
 
-**✅ COMPLETE & PRODUCTION-READY**
+**✅ COMPLETE & PRODUCTION-READY**_
 
 All requirements met:
 

@@ -1,10 +1,19 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
+
+  private sanitizeUser<T extends { password?: string }>(user: T): Omit<T, "password"> {
+    const { password, ...safeUser } = user;
+    return safeUser;
+  }
 
   async logAction(
     adminId: string,
@@ -27,17 +36,18 @@ export class AdminService {
   // ==================== USER MANAGEMENT ====================
 
   async getAllUsers() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       include: {
         brandProfile: true,
         influencerProfile: { include: { socialAccounts: true } },
         subscriptions: true,
       },
     });
+    return users.map((u) => this.sanitizeUser(u));
   }
 
   async getUserById(id: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
         brandProfile: true,
@@ -46,6 +56,10 @@ export class AdminService {
         payments: true,
       },
     });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    return this.sanitizeUser(user);
   }
 
   async createUser(
@@ -55,6 +69,11 @@ export class AdminService {
     role: "BRAND" | "INFLUENCER" | "ADMIN",
     adminId: string,
   ) {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException("User with this email already exists");
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.prisma.user.create({
@@ -90,7 +109,7 @@ export class AdminService {
       JSON.stringify({ email, name, role }),
     );
 
-    return user;
+    return this.sanitizeUser(user);
   }
 
   async updateUser(id: string, data: any, adminId: string) {
@@ -107,7 +126,7 @@ export class AdminService {
       JSON.stringify(data),
     );
 
-    return user;
+    return this.sanitizeUser(user);
   }
 
   async deleteUser(id: string, adminId: string) {
@@ -136,7 +155,7 @@ export class AdminService {
       JSON.stringify({ newRole }),
     );
 
-    return user;
+    return this.sanitizeUser(user);
   }
 
   // ==================== INFLUENCER MANAGEMENT ====================
@@ -156,6 +175,21 @@ export class AdminService {
     bio?: string,
     adminId?: string,
   ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    if (user.role !== "INFLUENCER") {
+      throw new ConflictException("User role must be INFLUENCER");
+    }
+
+    const existingProfile = await this.prisma.influencerProfile.findUnique({
+      where: { userId },
+    });
+    if (existingProfile) {
+      throw new ConflictException("Influencer profile already exists");
+    }
+
     const influencer = await this.prisma.influencerProfile.create({
       data: {
         userId,
@@ -247,6 +281,13 @@ export class AdminService {
     deadline: Date,
     adminId: string,
   ) {
+    const brandProfile = await this.prisma.brandProfile.findUnique({
+      where: { id: brandId },
+    });
+    if (!brandProfile) {
+      throw new NotFoundException("Brand profile not found");
+    }
+
     const campaign = await this.prisma.campaign.create({
       data: {
         brandId,
@@ -458,6 +499,6 @@ export class AdminService {
       user.email,
     );
 
-    return user;
+    return this.sanitizeUser(user);
   }
 }

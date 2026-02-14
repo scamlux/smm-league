@@ -57,7 +57,7 @@ This is a **production-ready MVP** with full features, persistent storage, and c
 
 **Pages Implemented:**
 
-```
+```md
 Public:
   ├── / (root redirect)
   ├── /auth/login
@@ -116,7 +116,7 @@ Admin:
 
 #### Deal Lifecycle
 
-```
+```md
 ACTIVE → CONTENT_SUBMITTED → APPROVED → COMPLETED
                                       ↓
                                     CANCELLED
@@ -202,7 +202,7 @@ ACTIVE → CONTENT_SUBMITTED → APPROVED → COMPLETED
 
 ### 14 Tables with Full Relationships
 
-```
+```md
 User (authentication & base data)
 ├── BrandProfile
 ├── InfluencerProfile
@@ -260,7 +260,7 @@ User (authentication & base data)
 
 ### Campaign Creation to Deal Completion
 
-```
+```md
 1. Brand creates campaign
 2. Influencers browse and submit bids
 3. Brand reviews bids
@@ -273,7 +273,7 @@ User (authentication & base data)
 
 ### Subscription & Access Control
 
-```
+```md
 Free User (Brand):
   - See public influencer stats
   - See locked content (blurred)
@@ -427,7 +427,7 @@ docker-compose exec backend npx prisma db seed
 
 ## 📁 File Structure
 
-```
+```md
 smm-league/
 ├── apps/
 │   ├── backend/
@@ -483,7 +483,7 @@ smm-league/
 3. **Configure database**: Update `.env.local`
 4. **Run migrations**: `npm --workspace=@smm-league/backend run prisma:migrate`
 5. **Start services**: `npm run dev`
-6. **Test the app**: Visit http://localhost:3000
+6. **Test the app**: Visit <http://localhost:3000>
 7. **For production**: Follow DEPLOYMENT.md guide
 8. **Setup CI/CD**: Push to GitHub to trigger pipeline
 
@@ -527,7 +527,7 @@ This platform demonstrates:
 
 ## 🏆 Project Status
 
-**🎉 COMPLETE AND PRODUCTION-READY**
+**🎉 COMPLETE AND PRODUCTION-READY**_
 
 All requirements met:
 
@@ -542,6 +542,6 @@ All requirements met:
 
 ---
 
-**Built with ❤️ for influencer marketing excellence**
+**Built with ❤️ for influencer marketing excellence**_
 
-_Last Updated: January 28, 2026_
+_Last Updated: January 28, 2026__
