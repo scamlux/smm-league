@@ -31,7 +31,7 @@ export class ChatService {
       this.prisma.influencerProfile.findUnique({ where: { userId } }),
     ]);
 
-    const isBrandOwner = brandProfile?.id === deal.brandId;
+    const isBrandOwner = userId === deal.brandId;
     const isInfluencerOwner = influencerProfile?.id === deal.influencerId;
     if (!isBrandOwner && !isInfluencerOwner) {
       throw new ForbiddenException("Access denied");

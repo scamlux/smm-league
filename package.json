@@ -13,6 +13,8 @@
     "build": "npm run build --workspace=@smm-league/backend && npm run build --workspace=@smm-league/frontend",
     "test": "echo \"Tests are not configured in this slimmed project\"",
     "lint": "echo \"Lint is not configured in this slimmed project\"",
+    "smoke:api": "node scripts/smoke-api.js",
+    "smoke:admin": "node scripts/smoke-admin.js",
     "postinstall": "npm run prisma:generate --workspace=@smm-league/backend"
   },
   "devDependencies": {

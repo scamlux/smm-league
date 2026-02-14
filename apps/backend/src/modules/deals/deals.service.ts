@@ -19,7 +19,7 @@ export class DealsService {
         where: { userId },
       });
       if (brandProfile) {
-        conditions.push({ brandId: brandProfile.id });
+        conditions.push({ brandId: userId });
       }
 
       const influencerProfile = await this.prisma.influencerProfile.findUnique({
@@ -54,7 +54,7 @@ export class DealsService {
       where: { id },
       include: {
         campaign: true,
-        brand: { include: { user: true } },
+        brand: true,
         influencer: { include: { user: true } },
         messages: { orderBy: { createdAt: "asc" } },
       },
@@ -64,8 +64,12 @@ export class DealsService {
     }
 
     if (role !== "ADMIN") {
-      const isBrandOwner = deal.brand.userId === userId;
-      const isInfluencerOwner = deal.influencer.userId === userId;
+      const [brandProfile, influencerProfile] = await Promise.all([
+        this.prisma.brandProfile.findUnique({ where: { userId } }),
+        this.prisma.influencerProfile.findUnique({ where: { userId } }),
+      ]);
+      const isBrandOwner = userId === deal.brandId;
+      const isInfluencerOwner = influencerProfile?.id === deal.influencerId;
       if (!isBrandOwner && !isInfluencerOwner) {
         throw new ForbiddenException("Access denied");
       }
@@ -92,7 +96,7 @@ export class DealsService {
         this.prisma.influencerProfile.findUnique({ where: { userId } }),
       ]);
 
-      const isBrandOwner = brandProfile?.id === deal.brandId;
+      const isBrandOwner = userId === deal.brandId;
       const isInfluencerOwner = influencerProfile?.id === deal.influencerId;
       if (!isBrandOwner && !isInfluencerOwner) {
         throw new ForbiddenException("Access denied");

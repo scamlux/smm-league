@@ -13,7 +13,6 @@ import {
 } from "@nestjs/common";
 import { CampaignsService } from "./campaigns.service";
 import { JwtAuthGuard } from "../../common/jwt-auth.guard";
-import { Roles, RolesGuard } from "../../common/roles.guard";
 
 @Controller("campaigns")
 export class CampaignsController {
@@ -32,8 +31,7 @@ export class CampaignsController {
     return this.campaignsService.getCampaignById(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("BRAND", "ADMIN")
+  @UseGuards(JwtAuthGuard)
   @Post()
   async createCampaign(
     @Request() req: any,
@@ -79,8 +77,7 @@ export class CampaignsController {
     return this.campaignsService.deleteCampaign(id, req.user.id, req.user.role);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("INFLUENCER", "ADMIN")
+  @UseGuards(JwtAuthGuard)
   @Post(":id/bids")
   async submitBid(
     @Param("id") campaignId: string,
@@ -115,15 +112,13 @@ export class CampaignsController {
     );
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("BRAND", "ADMIN")
+  @UseGuards(JwtAuthGuard)
   @Post("bids/:bidId/accept")
   async acceptBid(@Param("bidId") bidId: string, @Request() req: any) {
     return this.campaignsService.acceptBid(bidId, req.user.id, req.user.role);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("BRAND", "ADMIN")
+  @UseGuards(JwtAuthGuard)
   @Post("bids/:bidId/reject")
   async rejectBid(@Param("bidId") bidId: string, @Request() req: any) {
     return this.campaignsService.rejectBid(bidId, req.user.id, req.user.role);

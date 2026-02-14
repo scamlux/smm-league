@@ -10,6 +10,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const expressApp = app.getHttpAdapter().getInstance();
 
   // Security headers with Helmet
   app.use(
@@ -38,10 +39,11 @@ async function bootstrap() {
     allowedHeaders: ["Content-Type", "Authorization"],
   });
 
-  // Rate limiting for auth endpoints
-  const authLimiter = rateLimit({
+  // Rate limiting for login endpoint only
+  const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts per window
+    max: isProduction ? 5 : 100, // keep strict in prod, relaxed in local dev
+    skipSuccessfulRequests: true,
     message: {
       success: false,
       error: {
@@ -75,8 +77,29 @@ async function bootstrap() {
   // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Apply rate limiter to auth routes
-  app.use('/auth', authLimiter);
+  // Apply rate limiter only to login
+  app.use("/auth/login", loginLimiter);
+
+  // Basic service routes for browser/API smoke checks
+  expressApp.get("/", (_req, res) => {
+    res.json({
+      success: true,
+      data: {
+        name: "SMM League API",
+        status: "ok",
+        docs: "Use module routes like /auth/login, /campaigns, /deals",
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  expressApp.get("/health", (_req, res) => {
+    res.json({
+      success: true,
+      data: { status: "healthy" },
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   const PORT = process.env.PORT || 3001;
   await app.listen(PORT);

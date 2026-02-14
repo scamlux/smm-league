@@ -12,7 +12,7 @@ import {
 } from "@nestjs/common";
 import { InfluencersService } from "./influencers.service";
 import { JwtAuthGuard } from "../../common/jwt-auth.guard";
-import { AdminGuard, Roles, RolesGuard } from "../../common/roles.guard";
+import { AdminGuard } from "../../common/roles.guard";
 
 @Controller("influencers")
 export class InfluencersController {
@@ -57,8 +57,7 @@ export class InfluencersController {
     return this.influencersService.updateRankings(rankings);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("INFLUENCER", "ADMIN")
+  @UseGuards(JwtAuthGuard)
   @Post(":id/social-accounts")
   async addSocialAccount(
     @Param("id") id: string,
